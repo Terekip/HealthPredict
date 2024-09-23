@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forecast Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-2.9.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+        }
+        h1 {
+            font-size: 1.5em;
+            margin: 10px;
+        }
+        #logo {
+            width: 100px;
+            height: auto;
+            margin-top: 10px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            flex: 1;
+        }
+        .left-column, .right-column {
+            flex: 1;
+            padding: 10px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label, select, input, button {
+            font-size: 1em;
+            margin: 3px 0;
+        }
+        button {
+            background-color: hsl(125, 78%, 51%);
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #debug-message {
+            margin-top: 10px;
+            color: #ff0000;
+        }
+        #bar-graph, #line-graph {
+            width: 100%;
+            height: 100%;
+            margin: 10px 0;
+        }
+
+        /* Responsive Design */
+        @media (min-width: 600px) {
+            .container {
+                flex-direction: row;
+            }
+            .left-column {
+                flex: 0 0 30%;
+            }
+            .right-column {
+                flex: 1 0 70%;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            #logo {
+                width: 150px;
+            }
+        }
+        @media (min-width: 992px) {
+            .left-column {
+                flex: 0 0 20%;
+            }
+            .right-column {
+                flex: 1 0 80%;
+            }
+            h1 {
+                font-size: 3em;
+            }
+            #logo {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Muranga County Health Predictive Analytics</h1>
+        <img src="/images/muranga_logo.png" alt="Muranga Logo" id="logo">
+    </header>
+    <div class="container">
+        <div class="left-column">
+            <form id="forecast-form">
+                <label for="feature">Feature:</label>
+                <select id="feature" name="feature">
+                    {% for feature in features %}
+                    <option value="{{ feature }}">{{ feature }}</option>
+                    {% endfor %}
+                </select>
+                <label for="months">Forecast Months:</label>
+                <input type="number" id="months" name="months" min="1" max="12" value="12">
+                <button type="submit">Get Forecast</button>
+            </form>
+            <div id="debug-message"></div>
+        </div>
+        <div class="right-column">
+            <div id="bar-graph"></div>
+            <div id="line-graph"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('forecast-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch('/forecast', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                const debugMessageDiv = document.getElementById('debug-message');
+                const barGraphDiv = document.getElementById('bar-graph');
+                const lineGraphDiv = document.getElementById('line-graph');
+
+                // Display debug message
+                debugMessageDiv.innerHTML = `<p>${data.debug_message}</p>`;
+
+                // Clear existing graphs
+                barGraphDiv.innerHTML = '';
+                lineGraphDiv.innerHTML = '';
+
+                // Render bar graph
+                Plotly.newPlot(barGraphDiv, JSON.parse(data.bar_graph).data, JSON.parse(data.bar_graph).layout);
+                // Render line graph
+                Plotly.newPlot(lineGraphDiv, JSON.parse(data.line_graph).data, JSON.parse(data.line_graph).layout);
+            })
+            .catch(error => console.error('Error fetching forecast:', error));
+        });
+    </script>
+</body>
+</html>
